@@ -31,6 +31,17 @@
 #include <SPI.h>
 
 #include "SSD1306Ascii.h"
+
+
+#if defined(USE_OLED_SPI) && defined(ARDUINO_RASPBERRY_PI_PICO)
+#define SPI_N SPI1
+#define MISO (8)
+#define SCK (10)
+#define MOSI (11)
+
+#else
+#define SPI_N SPI
+#endif
 //------------------------------------------------------------------------------
 /**
  * @class SSD1306AsciiSpi
@@ -50,7 +61,12 @@ class SSD1306AsciiSpi : public SSD1306Ascii {
     m_dc = dc;
     pinMode(m_cs, OUTPUT);
     pinMode(m_dc, OUTPUT);
-    SPI.begin();
+#if defined(USE_OLED_SPI) && defined(ARDUINO_RASPBERRY_PI_PICO)
+    SPI_N.setRX(MISO);
+    SPI_N.setTX(MOSI);
+    SPI_N.setSCK(SCK);
+#endif
+    SPI_N.begin();
     init(dev);
   }
   /**
@@ -69,11 +85,11 @@ class SSD1306AsciiSpi : public SSD1306Ascii {
  protected:
   void writeDisplay(uint8_t b, uint8_t mode) {
     digitalWrite(m_dc, mode != SSD1306_MODE_CMD);
-    SPI.beginTransaction(SPISettings(8000000, MSBFIRST, SPI_MODE0));
+    SPI_N.beginTransaction(SPISettings(8000000, MSBFIRST, SPI_MODE0));
     digitalWrite(m_cs, LOW);
-    SPI.transfer(b);
+    SPI_N.transfer(b);
     digitalWrite(m_cs, HIGH);
-    SPI.endTransaction();
+    SPI_N.endTransaction();
   }
 
   int8_t m_cs;
